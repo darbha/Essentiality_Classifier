@@ -9,9 +9,7 @@ few scripts discussed here.
 
 #####1. processing_cerevisiae_properties.py
 
-    The script processes and retains relevant protein properties (e.g. codon adaptation index, frequency of amino acids), 
-    and essentiality information (binary; 1 = essential and 0 = nonessential) downloaded from yeast genome database and
-    OGEEDB, respectively. 
+  * The script processes and retains relevant protein properties (e.g. codon adaptation index, frequency of amino acids), and essentiality information (binary; 1 = essential and 0 = nonessential) downloaded from yeast genome database and OGEEDB, respectively. 
 
    The input is a file with gene names and several associated annotations (properties), and another file with genes names and essentiality status along with other information. Irrelevant data is filtered out, and genes with properties and associated essentiality information is provided as output.
 
