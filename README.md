@@ -1,144 +1,60 @@
-# RF
-# Random Forest Classifier
-from sklearn.ensemble import RandomForestClassifier
-import numpy as np
-from numpy import genfromtxt, savetxt
-import scipy
-from sklearn import metrics
-import matplotlib.pyplot as plt
-from sklearn.cross_validation import train_test_split
-from matplotlib.backends.backend_pdf import PdfPages
-from collections import OrderedDict
-import operator
-import itertools
+#Essentiality Classifier
+####(Classification of essential genes)
+
+A Random Forests (RF) classifier is built to classify (yeast) genes as essential or nonessential, using only protein sequence properties. 
+Input to train the classifier is protein properties and available essentiality information (experimental). >45 features used in studied. Only a 
+few scripts discussed here.
+
+####Some relevant scripts written to prepare datasets and train a RF classifier:
+
+#####1. processing_cerevisiae_properties.py
+
+...The script processes and retains relevant protein properties (e.g. codon adaptation index, frequency of amino acids), 
+...and essentiality information (binary; 1 = essential and 0 = nonessential) downloaded from yeast genome database and ...OGEEDB, respectively. 
+
+...The input is a file with gene names and several associated annotations (properties), and another file with genes names and
+...essentiality status along with other information. Irrelevant data is filtered out, and genes with properties and ...associated essentiality information is provided as output.
 
 
-def main():
+#####2. blast_paralog_detection.py
 
-######read in training files################
-	
-	prop_dataset = genfromtxt(open('filtered_properties.csv','r'))
-	ess_dataset = genfromtxt(open('filtered_ess.csv','r'))
-	
-
-######Split data into training and test sets######################
-	
-	prop_train, prop_test, ess_train, ess_test = train_test_split(prop_dataset, ess_dataset, test_size=.3)
-	#print prop_train.shape, prop_test.shape
-	
-	
-	
-######Random forest code#####################	
-	
-	rf = RandomForestClassifier(n_estimators=100, min_samples_split=2, n_jobs=1)
-	rf.fit(prop_train, ess_train)
-	
-######Save output - classes 1 or 0#################
-	
-	savetxt('predicted_output_RF3', rf.predict(prop_test), delimiter = ',', fmt = '%f')
+...Apart from downloaded properties, other features of genes were added too. These were computed by me. An example is paralog ...detection.
+...Paralogs are duplicate genes within a genome. 
+...The script filters all-against-all BLASTp results (input) as per method described by Gu et al 2002.
+...The output is count of paralogs per gene.
 
 
-######Calculate AUC###############
+#####3. RBH.py
+
+...Another calculated property was the presence or absence of an ortholog in other selected organisms.
+...The script takes in 2 BLASTp results and returns best reciprocal hits.
 
 
-	probas = rf.predict_proba(prop_test)
-	fpr, tpr, thresholds = metrics.roc_curve(ess_test, probas[:, 1])
-	ROC = metrics.auc(fpr, tpr)
-	print "\nAUC = ", ROC, "\n"
-	print fpr
-	print tpr
-	print thresholds
-	
-	
-#######Create and save ROC curve####################	
-	
-	pp = PdfPages('RF_Plots.pdf')
-	
-	plt.plot(fpr,tpr,label="RandomForest AUC=%.3f" % ROC)
-	plt.plot([0, 1], [0, 1], 'k--',label="RandomP AUC=%s" % 0.5)
-	plt.title('ROC curve for Classifier')
-	plt.xlabel('False Positive Rate')
-	plt.ylabel('True Positive Rate')
-	plt.legend(loc="lower right")
-	#plt.show()
-	plt.savefig(pp, format='pdf')
-	
-	
-	
-#######Compute feature importance#################
-	
-	feat_imp = rf.feature_importances_
-	#print feat_imp
-	
+#####4. disordered_proteins_cerevisiae.py
 
-#######Convert feat_imp which is a numpy object to a list##############
-	
-	feat_imp_list = feat_imp.tolist()
-	#print feat_imp_list
-	
-	
-#######Read in names of features (separate file)#################	
-	
-	with open('Features.txt', 'r') as h:
-		feature_names = h.read()
-		feature_names = feature_names.split("\t")
-		#print feature_names
-		
-
-########Create a dictionary of features names and corresponding feature importance values#############
-	
-	name_to_number_dict = dict(zip(feature_names, feat_imp_list))
-	#print name_to_number_dict
-
-	
-#########Sort and order the dictionary################
-	
-	sorted_dict = OrderedDict(sorted(name_to_number_dict.items(), key=lambda t:t[1], reverse = True))
-	#print sorted_dict
-	
-
-########Print top 10 features with values##########################
-	
-	count = 0
-	for x in sorted_dict:
-		print("%d. %s (%f)" % (count + 1, x, sorted_dict[x]))
-		count+=1
-		if count == 10:
-			break
-	print "\n"
-			
-############Calculate standard deviation, sort features in descending order and store the top 10###############
-	
-	std = np.std([tree.feature_importances_ for tree in rf.estimators_],axis=0)
-	indices = np.argsort(feat_imp)[::-1]
-	indices = indices[0:10]
-	
-	
-###########Plot the features - importance##############
-	
-	#print("Feature ranking:")
-	#for f in range(10):
-	#	print("%d. feature %d (%f)" % (f + 1, indices[f], feat_imp[indices[f]]))
-
-	plt.figure()
-	plt.title("Feature importances")
-	plt.ylabel('RF score')
-	plt.xlabel('Features')
-	plt.bar(range(len(indices)), feat_imp[indices], color="r", yerr=std[indices], align="center")
-	plt.xticks(range(10), np.asarray(feature_names)[indices], rotation = 45, fontsize = 12)
-	plt.xlim([-1, 10])
-	plt.savefig(pp, format='pdf')
-	
-	pp.close()
+...Maps data across files based on gene name and appends proteindisorder information to each gene.
 
 
-if __name__ == "__main__":
-	main()
-		
-		
+#####5. Kfold.py
+
+...Trains and tests an RF classifier with 10-fold cross validation. The classifier is trained and tested within a single ...dataset (species) here.
+...Input of protein properties (downloaded, calculated) and essentiality info is provided. An AUC-ROC curve is generated.
 
 
-# n_estimators : integer, optional (default=10) - The number of trees in the forest.
-# min_samples_split : integer, optional (default=2) - The minimum number of samples required to split an internal node. #Note: this parameter is tree-specific.
-# n_jobs : integer, optional (default=1) - The number of jobs to run in parallel for both fit and predict. 
-#If -1, then the number of jobs is set to the number of cores.
+#####6. parameter_search_cerevisiae.py
+
+...Various RF parameters are tested to detect the best combination of parameters for the study. 
+...Best number of estimators (trees), minimum split, criterion, maximum features are sought.
+...Classifier is trained and tested on single dataset. This script also calculates ROC curves to test performance and feature ...importance.
+
+
+#####7. comparing_ourROC_with_seringhausROC.py
+
+...Script compares performance between 2 classifiers (RF and naive bayes of another study). 
+...RF classifier is trained on one dataset (*S. cerevisiae*) and tested on another (*S. pombe*).
+...ROC curve is generated for my classifier, and for another classifier, which was one of the first to do attempt predicting ...essentiality with machine learning.
+
+
+#####8. statistical_tests.py
+
+...some statistical tests done during the study (Mann-Whitney, t-test, spearman correlation, z-score normalization)
