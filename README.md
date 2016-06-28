@@ -4,11 +4,11 @@
 
 A Random Forests (RF) classifier is built to classify (yeast) genes as essential or nonessential, using only protein sequence properties. Input to train the classifier is protein properties and available essentiality information (experimental). >45 features used in studied. Only a few scripts discussed here.
 
-
+<br>
 
 ####Some relevant scripts written to prepare datasets and train a RF classifier:
 
-
+<br>
 #####1. processing_cerevisiae_properties.py
 
   * The script processes and retains relevant protein properties (e.g. codon adaptation index, frequency of amino acids), and essentiality information (binary; 1 = essential and 0 = nonessential) downloaded from yeast genome database and OGEEDB, respectively. 
