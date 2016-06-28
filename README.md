@@ -13,7 +13,7 @@ few scripts discussed here.
    and essentiality information (binary; 1 = essential and 0 = nonessential) downloaded from yeast genome database and
    OGEEDB, respectively. 
 
-...The input is a file with gene names and several associated annotations (properties), and another file with genes names and essentiality status along with other information. Irrelevant data is filtered out, and genes with properties and associated essentiality information is provided as output.
+   The input is a file with gene names and several associated annotations (properties), and another file with genes names and essentiality status along with other information. Irrelevant data is filtered out, and genes with properties and associated essentiality information is provided as output.
 
 
 #####2. blast_paralog_detection.py
